@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark Revolution - Startseite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .custom-shadow {
+            box-shadow: 0 4px 6px -1px rgba(155, 140, 195, 0.3), 0 2px 4px -1px rgba(155, 140, 195, 0.2);
+        }
+        .developer-mode * {
+            outline: 1px dotted rgba(255, 0, 0, 0.3);
+            position: relative;
+        }
+        .developer-mode *:hover {
+            outline: 2px solid rgba(255, 0, 0, 0.5);
+        }
+        .developer-tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 12px;
+            z-index: 10000;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #2A1F35;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #9B8CC3;
+            border-radius: 4px;
+        }
+        /* Animation for developer mode indicator */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+        }
+        .dev-mode-indicator {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body class="bg-indigo-950 text-gray-100 font-sans min-h-screen flex flex-col">
+    <!-- Developer Mode Panel (hidden by default) -->
+    <div id="devPanel" class="hidden fixed bottom-0 left-0 right-0 bg-gray-900 text-white p-2 z-50 border-t-2 border-red-500">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <span class="font-bold text-red-400">DEVELOPER MODE ACTIVE</span>
+                <div id="elementInfo" class="text-sm">Hover over elements to inspect</div>
+            </div>
+            <div class="flex space-x-2">
+                <button id="banIpBtn" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm">
+                    <i class="fas fa-ban mr-1"></i> IP Sperren
+                </button>
+                <button id="restrictChatBtn" class="bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded text-sm">
+                    <i class="fas fa-comment-slash mr-1"></i> Chat beschränken
+                </button>
+                <button id="exportHtmlBtn" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm">
+                    <i class="fas fa-code mr-1"></i> HTML exportieren
+                </button>
+                <button id="devModeOffBtn" class="bg-gray-600 hover:bg-gray-700 px-3 py-1 rounded text-sm">
+                    <i class="fas fa-power-off mr-1"></i> Entwicklermodus ausschalten
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Developer Mode Indicator (hidden by default) -->
+    <div id="devModeIndicator" class="hidden fixed bottom-4 right-4 bg-red-500 text-white rounded-full w-12 h-12 flex items-center justify-center text-xl cursor-pointer dev-mode-indicator z-50" title="Entwicklermodus aktiv">
+        <i class="fas fa-code"></i>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+        <div class="bg-indigo-900 rounded-lg max-w-md w-full shadow-xl custom-shadow border border-purple-800">
+            <div class="p-4 flex justify-between items-center border-b border-purple-800">
+                <h3 class="text-xl font-bold text-purple-300">Willkommen bei Dark Revolution</h3>
+                <button id="closeLoginModal" class="text-gray-300 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="mb-4">
+                    <label class="block text-purple-300 text-sm font-medium mb-1" for="loginEmail">E-Mail</label>
+                    <input type="email" id="loginEmail" placeholder="Deine E-Mail-Adresse" class="w-full bg-indigo-800 border border-purple-700 rounded px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-purple-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-purple-300 text-sm font-medium mb-1" for="loginPassword">Passwort</label>
+                    <input type="password" id="loginPassword" placeholder="Dein Passwort" class="w-full bg-indigo-800 border border-purple-700 rounded px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-purple-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-purple-300 text-sm font-medium mb-1" for="loginUsername">Benutzername</label>
+                    <input type="text" id="loginUsername" placeholder="Dein Benutzername" class="w-full bg-indigo-800 border border-purple-700 rounded px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-purple-500">
+                </div>
+                <div class="mt-6 space-y-4">
+                    <button id="googleLoginBtn" class="w-full flex items-center justify-center space-x-2 bg-indigo-800 hover:bg-indigo-700 text-white py-2 rounded transition">
+                        <i class="fab fa-google text-red-400"></i>
+                        <span>Mit Google anmelden</span>
+                    </button>
+                    <div class="flex items-center">
+                        <div class="flex-1 h-px bg-purple-800"></div>
+                        <span class="px-3 text-sm text-purple-400">oder</span>
+                        <div class="flex-1 h-px bg-purple-800"></div>
+                    </div>
+                    <button id="loginBtn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 rounded transition">
+                        Anmelden
+                    </button>
+                </div>
+                <div class="mt-4 text-center text-sm text-purple-300">
+                    Noch kein Konto? <a href="#" class="text-purple-400 hover:underline">Registrieren</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-indigo-900 backdrop-blur-sm bg-opacity-90 border-b border-purple-900 sticky top-0 z-40">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <img src="https://readdy.ai/api/search-image?query=dark%20revolution%20logo%20with%20cosmic%20elements%2C%20space%20themed%2C%20purple%20and%20silver%20gradient%20text%2C%20futuristic%20gaming%20logo%20design%2C%20professional%20quality%2C%20glowing%20effects%2C%20stars%20background%2C%20digital%20art&width=200&height=80&seq=2&orientation=landscape" alt="Dark Revolution Logo" class="h-12 object-contain">
+            </div>
+            
+            <nav class="hidden md:flex space-x-6">
+                <a href="#" class="text-purple-300 hover:text-white font-medium transition">Home</a>
+                <a href="#" class="text-purple-300 hover:text-white font-medium transition">News</a>
+                <a href="#" class="text-purple-300 hover:text-white font-medium transition">Events</a>
+                <a href="#" class="text-purple-300 hover:text-white font-medium transition">Forum</a>
+                <a href="#" class="text-purple-300 hover:text-white font-medium transition">Partner</a>
+                <a href="#" class="text-purple-300 hover:text-white font-medium transition">Support</a>
+            </nav>
+            
+            <div id="userSection" class="flex items-center space-x-4">
+                <button id="openLoginModal" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md font-medium transition">
+                    Anmelden
+                </button>
+                
+                <!-- User dropdown will appear here when logged in -->
+                <div id="userDropdown" class="hidden relative">
+                    <button id="userMenuButton" class="flex items-center space-x-2">
+                        <img src="https://readdy.ai/api/search-image?query=futuristic%20gaming%20avatar%20with%20neon%20purple%20accents%2C%20digital%20art%20style%2C%20high%20quality%2C%20glowing%20elements%2C%20dark%20background%20with%20purple%20highlights%2C%20sci-fi%20aesthetic%2C%20detailed%20face%2C%20cyberpunk%20style&width=100&height=100&seq=1&orientation=squarish" alt="User Avatar" class="w-8 h-8 rounded-full">
+                        <span id="usernameDisplay" class="text-white text-sm font-medium"></span>
+                        <i class="fas fa-chevron-down text-purple-300 text-xs"></i>
+                    </button>
+                    
+                    <div id="dropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-indigo-800 rounded-md shadow-lg z-10 border border-purple-900">
+                        <div class="py-1">
+                            <a href="#" class="block px-4 py-2 text-sm text-white hover:bg-indigo-700"><i class="fas fa-user mr-2"></i> Profil</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-white hover:bg-indigo-700"><i class="fas fa-cog mr-2"></i> Einstellungen</a>
+                            <button id="logoutBtn" class="block w-full text-left px-4 py-2 text-sm text-white hover:bg-red-600"><i class="fas fa-sign-out-alt mr-2"></i> Abmelden</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="mobileMenuBtn" class="md:hidden text-purple-300 hover:text-white text-xl">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div id="mobileMenu" class="hidden md:hidden bg-indigo-900 p-4 border-t border-purple-900">
+            <nav class="flex flex-col space-y-3">
+                <a href="#" class="text-purple-300 hover:text-white font-medium transition">Home</a>
+                <a href="#" class="text-purple-300 hover:text-white font-medium transition">News</a>
+                <a href="#" class="text-purple-300 hover:text-white font-medium transition">Events</a>
+                <a href="#" class="text-purple-300 hover:text-white font-medium transition">Forum</a>
+                <a href="#" class="text-purple-300 hover:text-white font-medium transition">Partner</a>
+                <a href="#" class="text-purple-300 hover:text-white font-medium transition">Support</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow">
+        <!-- Hero Section -->
+        <section class="relative">
+            <div class="absolute inset-0 bg-gradient-to-b from-indigo-900/80 to-indigo-950/80"></div>
+            <div class="bg-[url('https://readdy.ai/api/search-image?query=cosmic%20space%20background%20with%20purple%20nebula%2C%20stars%2C%20and%20planets%2C%20dark%20space%20theme%2C%20high%20quality%20digital%20art%2C%20gaming%20aesthetic%2C%20deep%20space%20exploration%20scene%2C%20detailed%20cosmic%20environment&width=1800&height=600&seq=13&orientation=landscape')] bg-cover bg-center h-96 md:h-[32rem]">
+                <div class="relative z-10 container mx-auto px-4 h-full flex items-center">
+                    <div class="max-w-2xl text-center mx-auto">
+                        <h1 class="text-3xl md:text-5xl font-bold mb-4 text-white drop-shadow-lg">Willkommen bei Dark Revolution</h1>
+                        <p class="text-xl md:text-2xl text-purple-200 mb-8 drop-shadow-md">Deine Gaming-Community für Pixel Art und mehr</p>
+                        <div class="flex flex-col sm:flex-row justify-center gap-4">
+                            <a href="#" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-bold transition-transform hover:scale-105">
+                                Discord beitreten
+                            </a>
+                            <a href="#" class="bg-transparent border-2 border-purple-500 hover:bg-purple-500/20 text-white px-6 py-3 rounded-lg font-bold transition-transform hover:scale-105">
+                                Über unser Spiel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Live Counter -->
+            <div class="container mx-auto px-4 -mt-8 relative z-20">
+                <div class="bg-indigo-900 rounded-xl shadow-xl custom-shadow border border-purple-800 p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div class="flex items-center space-x-6">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-purple-400">59</div>
+                            <div class="text-sm text-purple-300">Mitglieder</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-green-400">12</div>
+                            <div class="text-sm text-purple-300">Online</div>
+                        </div>
+                    </div>
+                    <a href="#" class="flex items-center space-x-2 bg-indigo-800 hover:bg-indigo-700 px-4 py-2 rounded-lg transition">
+                        <i class="fab fa-discord text-blue-400"></i>
+                        <span>Discord beitreten</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sections Container -->
+        <div class="container mx-auto px-4 py-12 space-y-16">
+            <!-- News Section -->
+            <section>
+                <div class="flex justify-between items-end mb-6">
+                    <h2 class="text-2xl md:text-3xl font-bold text-purple-300 border-l-4 border-purple-500 pl-3">Neuigkeiten</h2>
+                    <a href="#" class="text-sm text-purple-400 hover:text-white flex items-center">
+                        Alle anzeigen <i class="fas fa-chevron-right ml-1"></i>
+                    </a>
+                </div>
+                
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <article class="bg-indigo-900 rounded-lg overflow-hidden border border-purple-800/50 hover:border-purple-600 transition-all hover:-translate-y-1 hover:shadow-lg">
+                        <img src="https://readdy.ai/api/search-image?query=pixel%20art%20game%20development%20update%2C%20cosmic%20theme%2C%20purple%20color%20palette%2C%20game%20design%20elements%2C%20digital%20art%2C%20high%20quality%20pixel%20graphics%2C%20space%20themed%20pixel%20art%2C%20development%20process%20visualization&width=500&height=300&seq=4&orientation=landscape" alt="News Image" class="w-full h-48 object-cover">
+                        <div class="p-4">
+                            <div class="text-xs text-purple-400 mb-2">04. Juni 2025</div>
+                            <h3 class="text-xl font-bold text-white mb-2">Neues Update für unser Pixel Art Spiel</h3>
+                            <p class="text-gray-300 text-sm mb-4 line-clamp-2">Wir haben neue Features hinzugefügt und Bugs behoben. Erfahre mehr über die Änderungen in unserem neuesten Update.</p>
+                            <a href="#" class="text-purple-400 text-sm font-medium flex items-center group">
+                                Weiterlesen <i class="fas fa-chevron-right ml-1 transition-transform group-hover:translate-x-1"></i>
+                            </a>
+                        </div>
+                    </article>
+                    
+                    <article class="bg-indigo-900 rounded-lg overflow-hidden border border-purple-800/50 hover:border-purple-600 transition-all hover:-translate-y-1 hover:shadow-lg">
+                        <img src="https://readdy.ai/api/search-image?query=gaming%20community%20event%2C%20cosmic%20space%20theme%2C%20purple%20lighting%2C%20gamers%20gathering%2C%20digital%20art%20style%2C%20esports%20tournament%2C%20gaming%20setup%20with%20purple%20neon%20lights%2C%20high%20quality%20rendering&width=500&height=300&seq=5&orientation=landscape" alt="News Image" class="w-full h-48 object-cover">
+                        <div class="p-4">
+                            <div class="text-xs text-purple-400 mb-2">02. Juni 2025</div>
+                            <h3 class="text-xl font-bold text-white mb-2">Community Event am Wochenende</h3>
+                            <p class="text-gray-300 text-sm mb-4 line-clamp-2">Nimm an unserem Community Event teil und gewinne exklusive Preise. Wir freuen uns auf deine Teilnahme!</p>
+                            <a href="#" class="text-purple-400 text-sm font-medium flex items-center group">
+                                Weiterlesen <i class="fas fa-chevron-right ml-1 transition-transform group-hover:translate-x-1"></i>
+                            </a>
+                        </div>
+                    </article>
+                    
+                    <article class="bg-indigo-900 rounded-lg overflow-hidden border border-purple-800/50 hover:border-purple-600 transition-all hover:-translate-y-1 hover:shadow-lg">
+                        <img src="https://readdy.ai/api/search-image?query=gaming%20partnership%20announcement%2C%20business%20handshake%20with%20cosmic%20purple%20background%2C%20professional%20digital%20art%2C%20space%20themed%20business%20collaboration%2C%20high%20quality%20rendering%2C%20corporate%20gaming%20partnership&width=500&height=300&seq=6&orientation=landscape" alt="News Image" class="w-full h-48 object-cover">
+                        <div class="p-4">
+                            <div class="text-xs text-purple-400 mb-2">28. Mai 2025</div>
+                            <h3 class="text-xl font-bold text-white mb-2">Neue Partnerschaft angekündigt</h3>
+                            <p class="text-gray-300 text-sm mb-4 line-clamp-2">Wir freuen uns, unsere neue Partnerschaft mit einem bekannten Gaming-Studio bekannt zu geben.</p>
+                            <a href="#" class="text-purple-400 text-sm font-medium flex items-center group">
+                                Weiterlesen <i class="fas fa-chevron-right ml-1 transition-transform group-hover:translate-x-1"></i>
+                            </a>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <!-- Game Updates Section -->
+            <section>
+                <div class="flex justify-between items-end mb-6">
+                    <h2 class="text-2xl md:text-3xl font-bold text-purple-300 border-l-4 border-purple-500 pl-3">Spiel-Updates</h2>
+                    <a href="#" class="text-sm text-purple-400 hover:text-white flex items-center">
+                        Alle anzeigen <i class="fas fa-chevron-right ml-1"></i>
+                    </a>
+                </div>
+                
+                <div class="bg-indigo-900 rounded-lg border border-purple-800/50 overflow-hidden">
+                    <div class="md:flex">
+                        <div class="md:w-1/2">
+                            <img src="https://readdy.ai/api/search-image?query=pixel%20art%20game%20screenshot%2C%20cosmic%20space%20theme%2C%20purple%20color%20scheme%2C%20retro%20gaming%20style%2C%20high%20quality%20pixel%20art%2C%20game%20development%2C%202D%20game%20design%2C%20character%20sprites%2C%20detailed%20pixel%20environment%2C%20sci-fi%20elements&width=600&height=400&seq=3&orientation=landscape" alt="Game Screenshot" class="w-full h-full object-cover">
+                        </div>
+                        <div class="p-6 md:w-1/2">
+                            <h3 class="text-2xl font-bold text-white mb-4">Dark Revolution - Pixel Art Game</h3>
+                            <p class="text-gray-300 mb-6">Unser Pixel Art Spiel befindet sich in der Entwicklung. Wir arbeiten fleißig daran, ein einzigartiges Spielerlebnis zu schaffen.</p>
+                            
+                            <div class="mb-6">
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm text-purple-400">Entwicklungsfortschritt:</span>
+                                    <span class="text-sm text-purple-400">35%</span>
+                                </div>
+                                <div class="w-full bg-indigo-800 rounded-full h-2.5">
+                                    <div class="bg-purple-600 h-2.5 rounded-full" style="width: 35%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-3 mb-8">
+                                <div class="flex items-center">
+                                    <i class="fas fa-check-circle text-purple-500 mr-2"></i>
+                                    <span class="text-gray-300">Pixel Art Design</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-check-circle text-purple-500 mr-2"></i>
+                                    <span class="text-gray-300">Community-basierte Entwicklung</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-check-circle text-purple-500 mr-2"></i>
+                                    <span class="text-gray-300">Einzigartige Spielmechaniken</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex space-x-3">
+                                <button class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md transition">Mehr erfahren</button>
+                                <button class="bg-indigo-800 hover:bg-indigo-700 border border-purple-600 text-white px-4 py-2 rounded-md transition">Beitragen</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Events Section -->
+            <section>
+                <div class="flex justify-between items-end mb-6">
+                    <h2 class="text-2xl md:text-3xl font-bold text-purple-300 border-l-4 border-purple-500 pl-3">Kommende Events</h2>
+                    <a href="#" class="text-sm text-purple-400 hover:text-white flex items-center">
+                        Alle anzeigen <i class="fas fa-chevron-right ml-1"></i>
+                    </a>
+                </div>
+                
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-indigo-900 rounded-lg border border-purple-800/50 p-5 flex">
+                        <div class="flex flex-col items-center justify-center bg-indigo-800 rounded-lg px-5 py-3 mr-5 w-24">
+                            <span class="text-2xl font-bold text-purple-300">10</span>
+                            <span class="text-sm text-purple-200">Jun</span>
+                        </div>
+                        <div class="flex-grow">
+                            <h3 class="text-lg font-bold text-white mb-2">Spieleabend mit der Community</h3>
+                            <p class="text-xs text-purple-400 mb-2">20:00 - 23:00 Uhr</p>
+                            <p class="text-sm text-gray-300 mb-3 line-clamp-2">Gemeinsames Spielen und Austausch mit anderen Community-Mitgliedern.</p>
+                            <div class="flex justify-between mt-4">
+                                <button class="text-purple-400 text-xs hover:text-white"><i class="fas fa-bell mr-1"></i> Erinnern</button>
+                                <button class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-xs">Teilnehmen</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-indigo-900 rounded-lg border border-purple-800/50 p-5 flex">
+                        <div class="flex flex-col items-center justify-center bg-indigo-800 rounded-lg px-5 py-3 mr-5 w-24">
+                            <span class="text-2xl font-bold text-purple-300">15</span>
+                            <span class="text-sm text-purple-200">Jun</span>
+                        </div>
+                        <div class="flex-grow">
+                            <h3 class="text-lg font-bold text-white mb-2">Entwickler-Stream</h3>
+                            <p class="text-xs text-purple-400 mb-2">19:00 - 21:00 Uhr</p>
+                            <p class="text-sm text-gray-300 mb-3 line-clamp-2">Live-Stream mit unseren Entwicklern über den aktuellen Stand des Spiels.</p>
+                            <div class="flex justify-between mt-4">
+                                <button class="text-purple-400 text-xs hover:text-white"><i class="fas fa-bell mr-1"></i> Erinnern</button>
+                                <button class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-xs">Teilnehmen</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-indigo-900 rounded-lg border border-purple-800/50 p-5 flex">
+                        <div class="flex flex-col items-center justify-center bg-indigo-800 rounded-lg px-5 py-3 mr-5 w-24">
+                            <span class="text-2xl font-bold text-purple-300">22</span>
+                            <span class="text-sm text-purple-200">Jun</span>
+                        </div>
+                        <div class="flex-grow">
+                            <h3 class="text-lg font-bold text-white mb-2">Pixel Art Workshop</h3>
+                            <p class="text-xs text-purple-400 mb-2">18:00 - 20:00 Uhr</p>
+                            <p class="text-sm text-gray-300 mb-3 line-clamp-2">Lerne die Grundlagen der Pixel Art und erstelle deine eigenen Designs.</p>
+                            <div class="flex justify-between mt-4">
+                                <button class="text-purple-400 text-xs hover:text-white"><i class="fas fa-bell mr-1"></i> Erinnern</button>
+                                <button class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-xs">Teilnehmen</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Forum Section -->
+            <section>
+                <div class="flex justify-between items-end mb-6">
+                    <h2 class="text-2xl md:text-3xl font-bold text-purple-300 border-l-4 border-purple-500 pl-3">Forum Diskussionen</h2>
+                    <a href="#" class="text-sm text-purple-400 hover:text-white flex items-center">
+                        Zum Forum <i class="fas fa-chevron-right ml-1"></i>
+                    </a>
+                </div>
+                
+                <div class="bg-indigo-900 rounded-lg border border-purple-800/50 overflow-hidden">
+                    <div class="divide-y divide-purple-800/50">
+                        <div class="p-4 hover:bg-indigo-800/50 transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="flex items-center space-x-3">
+                                    <img src="https://readdy.ai/api/search-image?query=gaming%20avatar%20with%20purple%20accents%2C%20digital%20art%20style%2C%20cosmic%20theme%2C%20high%20quality%2C%20glowing%20elements%2C%20dark%20background&width=50&height=50&seq=7&orientation=squarish" alt="User Avatar" class="w-8 h-8 rounded-full">
+                                    <span class="text-sm font-medium text-purple-400">PixelMaster</span>
+                                </div>
+                                <span class="text-xs text-purple-500">Heute, 14:32</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-white mb-1">Ideen für neue Spielmechaniken</h3>
+                            <p class="text-sm text-gray-300 mb-2 line-clamp-2">Ich habe einige Ideen für neue Spielmechaniken, die wir in unser Spiel einbauen könnten. Was haltet ihr davon?</p>
+                            <div class="flex space-x-4 text-xs text-purple-500">
+                                <span><i class="fas fa-comment mr-1"></i> 12 Antworten</span>
+                                <span><i class="fas fa-eye mr-1"></i> 89 Ansichten</span>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 hover:bg-indigo-800/50 transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="flex items-center space-x-3">
+                                    <img src="https://readdy.ai/api/search-image?query=cosmic%20themed%20gaming%20avatar%2C%20purple%20space%20background%2C%20digital%20art%20style%2C%20high%20quality%2C%20glowing%20elements%2C%20sci-fi%20aesthetic&width=50&height=50&seq=8&orientation=squarish" alt="User Avatar" class="w-8 h-8 rounded-full">
+                                    <span class="text-sm font-medium text-purple-400">CosmicGamer</span>
+                                </div>
+                                <span class="text-xs text-purple-500">Gestern, 19:15</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-white mb-1">Feedback zum letzten Update</h3>
+                            <p class="text-sm text-gray-300 mb-2 line-clamp-2">Das letzte Update hat einige interessante Änderungen gebracht. Hier ist mein Feedback dazu.</p>
+                            <div class="flex space-x-4 text-xs text-purple-500">
+                                <span><i class="fas fa-comment mr-1"></i> 8 Antworten</span>
+                                <span><i class="fas fa-eye mr-1"></i> 64 Ansichten</span>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 hover:bg-indigo-800/50 transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="flex items-center space-x-3">
+                                    <img src="https://readdy.ai/api/search-image?query=developer%20avatar%20with%20purple%20tech%20elements%2C%20digital%20art%20style%2C%20cosmic%20theme%2C%20high%20quality%2C%20glowing%20elements%2C%20dark%20background&width=50&height=50&seq=9&orientation=squarish" alt="User Avatar" class="w-8 h-8 rounded-full">
+                                    <span class="text-sm font-medium text-purple-400">RevolutionDev</span>
+                                </div>
+                                <span class="text-xs text-purple-500">02.06.2025, 10:45</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-white mb-1">Entwicklungs-Roadmap für Q3 2025</h3>
+                            <p class="text-sm text-gray-300 mb-2 line-clamp-2">Hier ist unsere geplante Roadmap für das dritte Quartal 2025. Wir freuen uns auf euer Feedback!</p>
+                            <div class="flex space-x-4 text-xs text-purple-500">
+                                <span><i class="fas fa-comment mr-1"></i> 15 Antworten</span>
+                                <span><i class="fas fa-eye mr-1"></i> 124 Ansichten</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Partners Section -->
+            <section>
+                <div class="flex justify-between items-end mb-6">
+                    <h2 class="text-2xl md:text-3xl font-bold text-purple-300 border-l-4 border-purple-500 pl-3">Unsere Partner</h2>
+                    <a href="#" class="text-sm text-purple-400 hover:text-white flex items-center">
+                        Alle Partner <i class="fas fa-chevron-right ml-1"></i>
+                    </a>
+                </div>
+                
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-indigo-900 rounded-lg border border-purple-800/50 p-6 flex flex-col items-center text-center hover:-translate-y-1 transition-transform">
+                        <img src="https://readdy.ai/api/search-image?query=cosmic%20games%20logo%2C%20purple%20space%20theme%2C%20professional%20gaming%20company%20logo%2C%20digital%20art%20style%2C%20high%20quality%2C%20minimalist%20design%2C%20dark%20background&width=200&height=200&seq=10&orientation=squarish" alt="Partner Logo" class="w-24 h-24 object-contain mb-4">
+                        <h3 class="text-xl font-bold text-white mb-2">Cosmic Games</h3>
+                        <p class="text-gray-300 text-sm mb-4">Ein führendes Indie-Spielestudio mit Fokus auf innovative Spielkonzepte.</p>
+                        <button class="mt-auto border border-purple-600 text-purple-400 hover:bg-purple-600/20 px-4 py-2 rounded text-sm transition">Besuchen</button>
+                    </div>
+                    
+                    <div class="bg-indigo-900 rounded-lg border border-purple-800/50 p-6 flex flex-col items-center text-center hover:-translate-y-1 transition-transform">
+                        <img src="https://readdy.ai/api/search-image?query=pixel%20universe%20logo%2C%20retro%20pixel%20art%20style%2C%20purple%20cosmic%20theme%2C%20professional%20gaming%20brand%2C%20digital%20art%2C%20high%20quality%2C%20gaming%20community%20logo&width=200&height=200&seq=11&orientation=squarish" alt="Partner Logo" class="w-24 h-24 object-contain mb-4">
+                        <h3 class="text-xl font-bold text-white mb-2">Pixel Universe</h3>
+                        <p class="text-gray-300 text-sm mb-4">Community für Pixel Art Enthusiasten und Retro-Gaming Fans.</p>
+                        <button class="mt-auto border border-purple-600 text-purple-400 hover:bg-purple-600/20 px-4 py-2 rounded text-sm transition">Besuchen</button>
+                    </div>
+                    
+                    <div class="bg-indigo-900 rounded-lg border border-purple-800/50 p-6 flex flex-col items-center text-center hover:-translate-y-1 transition-transform">
+                        <img src="https://readdy.ai/api/search-image?query=gamedev%20hub%20logo%2C%20purple%20tech%20theme%2C%20professional%20game%20development%20community%20logo%2C%20digital%20art%20style%2C%20high%20quality%2C%20modern%20design%2C%20dark%20background&width=200&height=200&seq=12&orientation=squarish" alt="Partner Logo" class="w-24 h-24 object-contain mb-4">
+                        <h3 class="text-xl font-bold text-white mb-2">GameDev Hub</h3>
+                        <p class="text-gray-300 text-sm mb-4">Ressourcen und Unterstützung für unabhängige Spieleentwickler.</p>
+                        <button class="mt-auto border border-purple-600 text-purple-400 hover:bg-purple-600/20 px-4 py-2 rounded text-sm transition">Besuchen</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-indigo-900 border-t border-purple-900">
+        <div class="container mx-auto px-4 py-12">
+            <div class="grid md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <img src="https://readdy.ai/api/search-image?query=dark%20revolution%20logo%20with%20cosmic%20elements%2C%20space%20themed%2C%20purple%20and%20silver%20gradient%20text%2C%20futuristic%20gaming%20logo%20design%2C%20professional%20quality%2C%20glowing%20effects%2C%20stars%20background%2C%20digital%20art&width=200&height=80&seq=2&orientation=landscape" alt="Logo" class="h-10 mb-4">
+                    <p class="text-sm text-purple-300">Dark Revolution - Gaming Community</p>
+                    <div class="flex space-x-4 mt-4">
+                        <a href="#" class="text-purple-400 hover:text-white text-xl"><i class="fab fa-discord"></i></a>
+                        <a href="#" class="text-purple-400 hover:text-white text-xl"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-purple-400 hover:text-white text-xl"><i class="fab fa-youtube"></i></a>
+                        <a href="#" class="text-purple-400 hover:text-white text-xl"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-bold text-purple-300 mb-4">Navigation</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-sm text-purple-400 hover:text-white transition">Home</a></li>
+                        <li><a href="#" class="text-sm text-purple-400 hover:text-white transition">News</a></li>
+                        <li><a href="#" class="text-sm text-purple-400 hover:text-white transition">Events</a></li>
+                        <li><a href="#" class="text-sm text-purple-400 hover:text-white transition">Forum</a></li>
+                        <li><a href="#" class="text-sm text-purple-400 hover:text-white transition">Partner</a></li>
+                        <li><a href="#" class="text-sm text-purple-400 hover:text-white transition">Support</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-bold text-purple-300 mb-4">Support</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-sm text-purple-400 hover:text-white transition">Kontakt</a></li>
+                        <li><a href="#" class="text-sm text-purple-400 hover:text-white transition">FAQ</a></li>
+                        <li><a href="#" class="text-sm text-purple-400 hover:text-white transition">Hilfe</a></li>
+                        <li><a href="#" class="text-sm text-purple-400 hover:text-white transition">Feedback</a></li>
+                        <li><a href="#" class="text-sm text-purple-400 hover:text-white transition">Bug melden</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-bold text-purple-300 mb-4">Rechtliches</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-sm text-purple-400 hover:text-white transition">Impressum</a></li>
+                        <li><a href="#" class="text-sm text-purple-400 hover:text-white transition">Datenschutz</a></li>
+                        <li><a href="#" class="text-sm text-purple-400 hover:text-white transition">Nutzungsbedingungen</a></li>
+                        <li><a href="#" class="text-sm text-purple-400 hover:text-white transition">Cookie-Richtlinien</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-purple-900 pt-8 text-center">
+                <p class="text-sm text-purple-500">© 2025 Dark Revolution. Alle Rechte vorbehalten.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- IP Ban Modal -->
+    <div id="ipBanModal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+        <div class="bg-indigo-900 rounded-lg max-w-md w-full shadow-xl border border-purple-800">
+            <div class="p-4 border-b border-purple-800">
+                <h3 class="text-lg font-bold text-white">IP-Adresse sperren</h3>
+            </div>
+            <div class="p-6">
+                <div class="mb-4">
+                    <label class="block text-purple-300 text-sm font-medium mb-1" for="banEmail">E-Mail-Adresse</label>
+                    <input type="text" id="banEmail" placeholder="E-Mail des Benutzers" class="w-full bg-indigo-800 border border-purple-700 rounded px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-purple-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-purple-300 text-sm font-medium mb-1" for="banReason">Grund</label>
+                    <select id="banReason" class="w-full bg-indigo-800 border border-purple-700 rounded px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-purple-500">
+                        <option value="spam">Spam</option>
+                        <option value="abuse">Missbrauch</option>
+                        <option value="tos">Verstoß gegen Nutzungsbedingungen</option>
+                        <option value="other">Anderer Grund</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button id="cancelBanBtn" class="bg-indigo-800 hover:bg-indigo-700 text-white px-4 py-2 rounded">Abbrechen</button>
+                    <button id="confirmBanBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-medium">Sperren</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Restriction Modal -->
+    <div id="chatRestrictModal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+        <div class="bg-indigo-900 rounded-lg max-w-md w-full shadow-xl border border-purple-800">
+            <div class="p-4 border-b border-purple-800">
+                <h3 class="text-lg font-bold text-white">Chat-Beschränkungen</h3>
+            </div>
+            <div class="p-6">
+                <div class="mb-4">
+                    <label class="block text-purple-300 text-sm font-medium mb-1" for="restrictUser">Benutzer</label>
+                    <input type="text" id="restrictUser" placeholder="Benutzername oder E-Mail" class="w-full bg-indigo-800 border border-purple-700 rounded px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-purple-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-purple-300 text-sm font-medium mb-1" for="restrictionType">Art der Einschränkung</label>
+                    <select id="restrictionType" class="w-full bg-indigo-800 border border-purple-700 rounded px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-purple-500">
+                        <option value="mute">Stumm schalten</option>
+                        <option value="readonly">Nur Lesen</option>
+                        <option value="timeout">Timeout (30 Min)</option>
+                        <option value="ban">Chat-Ban</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-purple-300 text-sm font-medium mb-1" for="restrictReason">Grund</label>
+                    <textarea id="restrictReason" placeholder="Optionaler Grund" class="w-full bg-indigo-800 border border-purple-700 rounded px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-purple-500 h-20"></textarea>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button id="cancelRestrictBtn" class="bg-indigo-800 hover:bg-indigo-700 text-white px-4 py-2 rounded">Abbrechen</button>
+                    <button id="confirmRestrictBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded font-medium">Anwenden</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        let isLoggedIn = false;
+        let isDevMode = false;
+        let currentUser = null;
+        
+        // DOM elements
+        const loginModal = document.getElementById('loginModal');
+        const openLoginModal = document.getElementById('openLoginModal');
+        const closeLoginModal = document.getElementById('closeLoginModal');
+        const loginBtn = document.getElementById('loginBtn');
+        const googleLoginBtn = document.getElementById('googleLoginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userSection = document.getElementById('userSection');
+        const userDropdown = document.getElementById('userDropdown');
+        const usernameDisplay = document.getElementById('usernameDisplay');
+        const userMenuButton = document.getElementById('userMenuButton');
+        const dropdownMenu = document.getElementById('dropdownMenu');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const devPanel = document.getElementById('devPanel');
+        const devModeIndicator = document.getElementById('devModeIndicator');
+        const devModeOffBtn = document.getElementById('devModeOffBtn');
+        const banIpBtn = document.getElementById('banIpBtn');
+        const restrictChatBtn = document.getElementById('restrictChatBtn');
+        const exportHtmlBtn = document.getElementById('exportHtmlBtn');
+        const ipBanModal = document.getElementById('ipBanModal');
+        const chatRestrictModal = document.getElementById('chatRestrictModal');
+        const cancelBanBtn = document.getElementById('cancelBanBtn');
+        const confirmBanBtn = document.getElementById('confirmBanBtn');
+        const cancelRestrictBtn = document.getElementById('cancelRestrictBtn');
+        const confirmRestrictBtn = document.getElementById('confirmRestrictBtn');
+        
+        // Event listeners for authentication
+        openLoginModal.addEventListener('click', () => loginModal.classList.remove('hidden'));
+        closeLoginModal.addEventListener('click', () => loginModal.classList.add('hidden'));
+        
+        loginBtn.addEventListener('click', () => {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const username = document.getElementById('loginUsername').value;
+            
+            // Check if it's the developer account
+            if (email === 'legendgerman749@gmail.com' && password === 'DarkRev2025/3127') {
+                currentUser = { 
+                    username: 'Admin', 
+                    email: email,
+                    isAdmin: true,
+                    avatar: 'https://readdy.ai/api/search-image?query=developer%20avatar%20with%20purple%20tech%20elements%2C%20digital%20art%20style%2C%20cosmic%20theme%2C%20high%20quality%2C%20glowing%20elements%2C%20dark%20background&width=100&height=100&seq=9&orientation=squarish'
+                };
+                isLoggedIn = true;
+                isDevMode = true;
+                
+                // Show developer mode
+                enableDevMode();
+            } else if (email && password && username) {
+                currentUser = { 
+                    username: username,
+                    email: email,
+                    isAdmin: false,
+                    avatar: 'https://readdy.ai/api/search-image?query=user%20avatar%2C%20gaming%20profile%2C%20purple%20theme%2C%20futuristic%20design%2C%20digital%20art%2C%20high%20quality&width=100&height=100&seq=16&orientation=squarish'
+                };
+                isLoggedIn = true;
+            }
+            
+            if (isLoggedIn) {
+                updateUserUI();
+                loginModal.classList.add('hidden');
+                // Clear form
+                document.getElementById('loginEmail').value = '';
+                document.getElementById('loginPassword').value = '';
+                document.getElementById('loginUsername').value = '';
+            } else {
+                alert('Bitte füllen Sie alle Felder aus.');
+            }
+        });
+        
+        googleLoginBtn.addEventListener('click', () => {
+            // Simulate Google login
+            currentUser = { 
+                username: 'GoogleUser',
+                email: 'googleuser@example.com',
+                isAdmin: false,
+                avatar: 'https://readdy.ai/api/search-image?query=user%20avatar%2C%20gaming%20profile%2C%20purple%20theme%2C%20google%20account%2C%20high%20quality&width=100&height=100&seq=17&orientation=squarish'
+            };
+            isLoggedIn = true;
+            updateUserUI();
+            loginModal.classList.add('hidden');
+        });
+        
+        logoutBtn.addEventListener('click', () => {
+            isLoggedIn = false;
+            currentUser = null;
+            isDevMode = false;
+            updateUserUI();
+            disableDevMode();
+        });
+        
+        // Mobile menu toggle
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+        
+        // User menu toggle
+        userMenuButton?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdownMenu.classList.toggle('hidden');
+        });
+        
+        // Close dropdown when clicking elsewhere
+        document.addEventListener('click', () => {
+            if (!dropdownMenu.classList.contains('hidden')) {
+                dropdownMenu.classList.add('hidden');
+            }
+        });
+        
+        // Developer mode functions
+        function enableDevMode() {
+            document.body.classList.add('developer-mode');
+            devPanel.classList.remove('hidden');
+            devModeIndicator.classList.remove('hidden');
+            
+            // Add element inspection
+            document.addEventListener('mousemove', trackMousePosition);
+            document.addEventListener('mouseover', showElementInfo);
+            document.addEventListener('click', devModeClickHandler);
+        }
+        
+        function disableDevMode() {
+            document.body.classList.remove('developer-mode');
+            devPanel.classList.add('hidden');
+            devModeIndicator.classList.add('hidden');
+            
+            // Remove element inspection
+            document.removeEventListener('mousemove', trackMousePosition);
+            document.removeEventListener('mouseover', showElementInfo);
+            document.removeEventListener('click', devModeClickHandler);
+            
+            // Hide any tooltips
+            const tooltips = document.querySelectorAll('.developer-tooltip');
+            tooltips.forEach(t => t.remove());
+        }
+        
+        // Developer mode controls
+        devModeOffBtn.addEventListener('click', disableDevMode);
+        devModeIndicator.addEventListener('click', () => devPanel.classList.toggle('hidden'));
+        
+        // Ban IP functionality
+        banIpBtn.addEventListener('click', () => {
+            ipBanModal.classList.remove('hidden');
+        });
+        
+        cancelBanBtn.addEventListener('click', () => {
+            ipBanModal.classList.add('hidden');
+        });
+        
+        confirmBanBtn.addEventListener('click', () => {
+            const email = document.getElementById('banEmail').value;
+            const reason = document.getElementById('banReason').value;
+            
+            if (email) {
+                alert(`Die E-Mail-Adresse ${email} wurde aufgrund von ${reason} gesperrt.`);
+                ipBanModal.classList.add('hidden');
+                document.getElementById('banEmail').value = '';
+            } else {
+                alert('Bitte geben Sie eine E-Mail-Adresse ein.');
+            }
+        });
+        
+        // Chat restriction functionality
+        restrictChatBtn.addEventListener('click', () => {
+            chatRestrictModal.classList.remove('hidden');
+        });
+        
+        cancelRestrictBtn.addEventListener('click', () => {
+            chatRestrictModal.classList.add('hidden');
+        });
+        
+        confirmRestrictBtn.addEventListener('click', () => {
+            const user = document.getElementById('restrictUser').value;
+            const type = document.getElementById('restrictionType').value;
+            const reason = document.getElementById('restrictReason').value || 'kein Grund angegeben';
+            
+            if (user) {
+                alert(`Chat-Beschränkung (${type}) für ${user} angewendet. Grund: ${reason}`);
+                chatRestrictModal.classList.add('hidden');
+                document.getElementById('restrictUser').value = '';
+                document.getElementById('restrictReason').value = '';
+            } else {
+                alert('Bitte geben Sie einen Benutzer an.');
+            }
+        });
+        
+        // Export HTML
+        exportHtmlBtn.addEventListener('click', () => {
+            const html = document.documentElement.outerHTML;
+            const blob = new Blob([html], {type: 'text/html'});
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'dark-revolution-page.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert('HTML wurde erfolgreich exportiert.');
+        });
+        
+        // Update UI based on login state
+        function updateUserUI() {
+            if (isLoggedIn && currentUser) {
+                // Show user dropdown and hide login button
+                openLoginModal.classList.add('hidden');
+                userDropdown.classList.remove('hidden');
+                
+                // Update user info
+                usernameDisplay.textContent = currentUser.username;
+                const avatar = userDropdown.querySelector('img');
+                avatar.src = currentUser.avatar;
+                
+                // If admin, show admin features
+                if (currentUser.isAdmin) {
+                    // Admin features would be shown here if needed
+                }
+            } else {
+                // Hide user dropdown and show login button
+                openLoginModal.classList.remove('hidden');
+                userDropdown.classList.add('hidden');
+            }
+        }
+        
+        // Developer mode utilities
+        function trackMousePosition(e) {
+            if (!isDevMode) return;
+            
+            // Add tooltip on hover
+            const el = document.elementFromPoint(e.clientX, e.clientY);
+            if (el) {
+                const existingInfo = document.getElementById('elementInfo');
+                if (existingInfo) {
+                    existingInfo.textContent = getElementInfo(el);
+                }
+            }
+        }
+        
+        function showElementInfo(e) {
+            if (!isDevMode) return;
+            
+            // Remove existing tooltips
+            const existing = document.querySelectorAll('.developer-tooltip');
+            existing.forEach(el => el.remove());
+            
+            // Add new tooltip
+            const el = e.target;
+            if (el && el !== document.body && !el.classList.contains('developer-tooltip')) {
+                const tooltip = document.createElement('div');
+                tooltip.className = 'developer-tooltip';
+                tooltip.textContent = getElementInfo(el);
+                
+                // Position tooltip
+                const rect = el.getBoundingClientRect();
+                tooltip.style.left = `${rect.left}px`;
+                tooltip.style.top = `${rect.top - 25}px`;
+                
+                document.body.appendChild(tooltip);
+            }
+        }
+        
+        function getElementInfo(el) {
+            const tag = el.tagName.toLowerCase();
+            const id = el.id ? `#${el.id}` : '';
+            const classes = el.className ? `.${el.className.replace(/\s+/g, '.')}` : '';
+            
+            // Special handling for Tailwind classes
+            let twClasses = '';
+            if (el.className) {
+                const classList = el.className.split(' ');
+                const twClassesList = classList.filter(c => 
+                    c.match(/^(bg|text|border|hover|focus|ring|w|h|p|m|flex|grid|space|gap|rounded|shadow|transition|duration|ease|delay)-/) ||
+                    c.match(/^md:|lg:|sm:|xl:|2xl:/)
+                );
+                twClasses = twClassesList.length > 0 ? ` [${twClassesList.join(' ')}]` : '';
+            }
+            
+            return `${tag}${id}${classes}${twClasses}`;
+        }
+        
+        function devModeClickHandler(e) {
+            if (!isDevMode) return;
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const el = e.target;
+            if (el && el !== document.body) {
+                const action = prompt(
+                    `Element: ${getElementInfo(el)}\n\n` +
+                    `Was möchten Sie tun?\n` +
+                    `1. Bearbeiten\n` +
+                    `2. In Konsole anzeigen\n` +
+                    `3. Stile anzeigen\n` +
+                    `4. Löschen\n` +
+                    `5. Abbrechen`
+                );
+                
+                switch (action) {
+                    case '1':
+                        const newContent = prompt('Neuer Inhalt:', el.textContent);
+                        if (newContent !== null) {
+                            el.textContent = newContent;
+                        }
+                        break;
+                    case '2':
+                        console.log(el);
+                        alert('Element wurde in der Konsole ausgegeben.');
+                        break;
+                    case '3':
+                        const styles = window.getComputedStyle(el);
+                        let styleText = '';
+                        for (let i = 0; i < styles.length; i++) {
+                            const prop = styles[i];
+                            styleText += `${prop}: ${styles.getPropertyValue(prop)}\n`;
+                        }
+                        console.log(styles);
+                        alert('Stile wurden in der Konsole ausgegeben.');
+                        break;
+                    case '4':
+                        if (confirm('Sind Sie sicher, dass Sie dieses Element löschen möchten?')) {
+                            el.remove();
+                        }
+                        break;
+                    default:
+                        // Do nothing
+                }
+            }
+        }
+        
+        // Initialize UI
+        updateUserUI();
+    </script>
+</body>
+</html>
